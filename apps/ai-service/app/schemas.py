@@ -3,9 +3,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
+
 # Knowledge base indexing
-# ---------------------------------------------------------------------------
+
 
 
 class IndexArticleRequest(BaseModel):
@@ -25,10 +25,8 @@ class DeleteArticleResponse(BaseModel):
     article_id: str
     deleted: bool
 
-
-# ---------------------------------------------------------------------------
 # Summarization + sentiment
-# ---------------------------------------------------------------------------
+
 
 
 class TicketMessageInput(BaseModel):
@@ -47,9 +45,8 @@ class SummarizeResponse(BaseModel):
     sentiment: Literal["positive", "neutral", "negative"]
 
 
-# ---------------------------------------------------------------------------
 # Suggested replies (RAG)
-# ---------------------------------------------------------------------------
+
 
 
 class SuggestReplyRequest(BaseModel):

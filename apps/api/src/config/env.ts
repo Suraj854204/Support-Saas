@@ -1,3 +1,5 @@
+///this place check env erorr and env fullfilment ok
+
 import "dotenv/config";
 import { z } from "zod";
 

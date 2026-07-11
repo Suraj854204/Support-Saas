@@ -1,0 +1,239 @@
+// ============================================================================
+// Prisma schema — PostgreSQL system of record for the Support SaaS platform.
+// Mirrors the shapes in packages/shared-types/src/entities.ts.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum PlanTier {
+  free
+  starter
+  growth
+  enterprise
+}
+
+enum UserRole {
+  owner
+  admin
+  agent
+  viewer
+}
+
+enum TicketStatus {
+  open
+  pending
+  on_hold
+  solved
+  closed
+}
+
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum TicketChannel {
+  email
+  chat
+  web_widget
+  api
+  social
+}
+
+enum MessageAuthorType {
+  customer
+  agent
+  ai
+  system
+}
+
+enum ArticleStatus {
+  draft
+  published
+  archived
+}
+
+// ---------------------------------------------------------------------------
+// Organizations & multi-tenancy
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  planTier  PlanTier @default(free) @map("plan_tier")
+  logoUrl   String?  @map("logo_url")
+  domain    String?
+  nextTicketNumber Int @default(1) @map("next_ticket_number")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users     User[]
+  customers Customer[]
+  tickets   Ticket[]
+  teams     Team[]
+  articles  KnowledgeArticle[]
+
+  @@map("organizations")
+}
+
+// ---------------------------------------------------------------------------
+// Users & auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(uuid())
+  orgId        String    @map("org_id")
+  email        String
+  passwordHash String    @map("password_hash")
+  name         String
+  avatarUrl    String?   @map("avatar_url")
+  role         UserRole  @default(agent)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastSeenAt   DateTime? @map("last_seen_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  organization    Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignedTickets Ticket[]        @relation("TicketAssignee")
+  teamMemberships TeamMember[]
+  messages        TicketMessage[]
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@map("users")
+}
+
+model Customer {
+  id         String   @id @default(uuid())
+  orgId      String   @map("org_id")
+  email      String?
+  name       String?
+  avatarUrl  String?  @map("avatar_url")
+  externalId String?  @map("external_id")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tickets      Ticket[]
+
+  @@index([orgId])
+  @@map("customers")
+}
+
+// ---------------------------------------------------------------------------
+// Teams
+// ---------------------------------------------------------------------------
+
+model Team {
+  id        String   @id @default(uuid())
+  orgId     String   @map("org_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+  tickets      Ticket[]
+
+  @@index([orgId])
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId   String @map("team_id")
+  userId   String @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}
+
+// ---------------------------------------------------------------------------
+// Tickets
+// ---------------------------------------------------------------------------
+
+model Ticket {
+  id           String         @id @default(uuid())
+  orgId        String         @map("org_id")
+  number       Int
+  subject      String
+  status       TicketStatus   @default(open)
+  priority     TicketPriority @default(normal)
+  channel      TicketChannel  @default(web_widget)
+  customerId   String         @map("customer_id")
+  assigneeId   String?        @map("assignee_id")
+  teamId       String?        @map("team_id")
+  tags         String[]       @default([])
+  aiSummary    String?        @map("ai_summary")
+  aiSentiment  String?        @map("ai_sentiment")
+  slaBreachAt  DateTime?      @map("sla_breach_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  resolvedAt   DateTime?      @map("resolved_at")
+
+  organization Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  assignee     User?           @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  team         Team?           @relation(fields: [teamId], references: [id])
+  messages     TicketMessage[]
+
+  @@unique([orgId, number])
+  @@index([orgId, status])
+  @@index([orgId, assigneeId])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id             String            @id @default(uuid())
+  ticketId       String            @map("ticket_id")
+  authorType     MessageAuthorType @map("author_type")
+  authorId       String?           @map("author_id")
+  body           String
+  bodyFormat     String            @default("text") @map("body_format")
+  isInternalNote Boolean           @default(false) @map("is_internal_note")
+  aiGenerated    Boolean           @default(false) @map("ai_generated")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User?  @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+// ---------------------------------------------------------------------------
+// Knowledge base
+// ---------------------------------------------------------------------------
+
+model KnowledgeArticle {
+  id            String        @id @default(uuid())
+  orgId         String        @map("org_id")
+  title         String
+  content       String
+  status        ArticleStatus @default(draft)
+  tags          String[]      @default([])
+  vectorIndexed Boolean       @default(false) @map("vector_indexed")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("knowledge_articles")
+}

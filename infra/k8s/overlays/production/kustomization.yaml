@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: support-saas
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: support-saas-config
+    behavior: merge
+    literals:
+      - NEXT_PUBLIC_APP_URL=https://app.example.com
+      - NEXT_PUBLIC_API_URL=https://api.example.com
+      - CORS_ORIGINS=https://app.example.com
+
+images:
+  - name: api
+    newName: 123456789.dkr.ecr.us-east-1.amazonaws.com/support-saas-api
+    newTag: latest
+  - name: web
+    newName: 123456789.dkr.ecr.us-east-1.amazonaws.com/support-saas-web
+    newTag: latest
+  - name: ai-service
+    newName: 123456789.dkr.ecr.us-east-1.amazonaws.com/support-saas-ai-service
+    newTag: latest
+
+# Production keeps the base replica counts (2+) and HPA minimums as-is —
+# no replica-reducing patches here, unlike the staging overlay.

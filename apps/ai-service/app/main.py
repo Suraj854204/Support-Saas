@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,10 +10,7 @@ from app.vector_store import get_qdrant_client
 
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "%(asctime)s | %(levelname)s | "
-        "%(name)s | %(message)s"
-    ),
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +37,7 @@ app.include_router(ai_router)
 
 
 @app.get("/health")
-def health() -> dict:
+def health() -> dict[str, Any]:
     qdrant_status = "connected"
 
     try:
@@ -48,14 +46,12 @@ def health() -> dict:
         qdrant_status = "unavailable"
         logger.warning("Qdrant health check failed: %s", exc)
 
-    overall_status = (
-        "ok"
-        if qdrant_status == "connected"
-        else "degraded"
-    )
-
     return {
-        "status": overall_status,
+        "status": (
+            "ok"
+            if qdrant_status == "connected"
+            else "degraded"
+        ),
         "service": settings.SERVICE_NAME,
         "llm": settings.GEMINI_CHAT_MODEL,
         "embeddings": settings.GEMINI_EMBEDDING_MODEL,

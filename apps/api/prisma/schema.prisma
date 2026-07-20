@@ -71,15 +71,15 @@ enum ArticleStatus {
 // ---------------------------------------------------------------------------
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  planTier  PlanTier @default(free) @map("plan_tier")
-  logoUrl   String?  @map("logo_url")
-  domain    String?
-  nextTicketNumber Int @default(1) @map("next_ticket_number")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  name             String
+  slug             String   @unique
+  planTier         PlanTier @default(free) @map("plan_tier")
+  logoUrl          String?  @map("logo_url")
+  domain           String?
+  nextTicketNumber Int      @default(1) @map("next_ticket_number")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   users     User[]
   customers Customer[]
@@ -107,14 +107,29 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  organization    Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  assignedTickets Ticket[]        @relation("TicketAssignee")
-  teamMemberships TeamMember[]
-  messages        TicketMessage[]
+  organization        Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignedTickets     Ticket[]             @relation("TicketAssignee")
+  teamMemberships     TeamMember[]
+  messages            TicketMessage[]
+  passwordResetTokens PasswordResetToken[]
 
-  @@unique([orgId, email])
   @@index([orgId])
+  @@index([email])
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model Customer {
@@ -153,8 +168,8 @@ model Team {
 }
 
 model TeamMember {
-  teamId   String @map("team_id")
-  userId   String @map("user_id")
+  teamId   String   @map("team_id")
+  userId   String   @map("user_id")
   joinedAt DateTime @default(now()) @map("joined_at")
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -169,23 +184,23 @@ model TeamMember {
 // ---------------------------------------------------------------------------
 
 model Ticket {
-  id           String         @id @default(uuid())
-  orgId        String         @map("org_id")
-  number       Int
-  subject      String
-  status       TicketStatus   @default(open)
-  priority     TicketPriority @default(normal)
-  channel      TicketChannel  @default(web_widget)
-  customerId   String         @map("customer_id")
-  assigneeId   String?        @map("assignee_id")
-  teamId       String?        @map("team_id")
-  tags         String[]       @default([])
-  aiSummary    String?        @map("ai_summary")
-  aiSentiment  String?        @map("ai_sentiment")
-  slaBreachAt  DateTime?      @map("sla_breach_at")
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
-  resolvedAt   DateTime?      @map("resolved_at")
+  id          String         @id @default(uuid())
+  orgId       String         @map("org_id")
+  number      Int
+  subject     String
+  status      TicketStatus   @default(open)
+  priority    TicketPriority @default(normal)
+  channel     TicketChannel  @default(web_widget)
+  customerId  String         @map("customer_id")
+  assigneeId  String?        @map("assignee_id")
+  teamId      String?        @map("team_id")
+  tags        String[]       @default([])
+  aiSummary   String?        @map("ai_summary")
+  aiSentiment String?        @map("ai_sentiment")
+  slaBreachAt DateTime?      @map("sla_breach_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  resolvedAt  DateTime?      @map("resolved_at")
 
   organization Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customer     Customer        @relation(fields: [customerId], references: [id])

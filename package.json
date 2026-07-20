@@ -21,16 +21,20 @@
     "docker:logs": "docker compose -f infra/docker/docker-compose.yml logs -f"
   },
   "devDependencies": {
-    "turbo": "^2.3.0",
-    "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.9",
+    "@types/nodemailer": "^8.0.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "turbo": "^2.3.0",
     "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "nodemailer": "^9.0.3"
   }
 }

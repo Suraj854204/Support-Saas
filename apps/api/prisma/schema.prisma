@@ -1,0 +1,615 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                    String                @id @default(uuid())
+  name                  String
+  slug                  String                @unique
+  planTier              PlanTier              @default(free) @map("plan_tier")
+  logoUrl               String?               @map("logo_url")
+  domain                String?
+  nextTicketNumber      Int                   @default(1) @map("next_ticket_number")
+  defaultTicketPriority TicketPriority        @default(normal) @map("default_ticket_priority")
+  businessHours         Json?                 @map("business_hours")
+  slaPolicy             Json?                 @map("sla_policy")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  attachments           Attachment[]
+  auditLogs             AuditLog[]
+  automationRules       AutomationRule[]
+  cannedResponses       CannedResponse[]
+  customers             Customer[]
+  emailConnections      EmailConnection[]
+  inboundEmailMessages  InboundEmailMessage[]
+  invitations           Invitation[]
+  articles              KnowledgeArticle[]
+  teams                 Team[]
+  tickets               Ticket[]
+  users                 User[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                        String                   @id @default(uuid())
+  orgId                     String                   @map("org_id")
+  email                     String
+  passwordHash              String                   @map("password_hash")
+  name                      String
+  avatarUrl                 String?                  @map("avatar_url")
+  role                      UserRole                 @default(agent)
+  isActive                  Boolean                  @default(true) @map("is_active")
+  emailVerifiedAt           DateTime?                @map("email_verified_at")
+  lastSeenAt                DateTime?                @map("last_seen_at")
+  weeklyCapacity            Int?                     @map("weekly_capacity")
+  timezone                  String?
+  createdAt                 DateTime                 @default(now()) @map("created_at")
+  updatedAt                 DateTime                 @updatedAt @map("updated_at")
+
+  connectedEmailConnections EmailConnection[]        @relation("EmailConnectionConnectedBy")
+  emailVerificationTokens   EmailVerificationToken[]
+  passwordResetTokens       PasswordResetToken[]
+  sentInvitations           Invitation[]             @relation("InvitationInviter")
+  loginActivities           LoginActivity[]
+  loginOtpChallenges        LoginOtpChallenge[]
+  teamMemberships           TeamMember[]
+  managedTeams              Team[]                   @relation("TeamManager")
+  messages                  TicketMessage[]
+  ticketViews               TicketView[]
+  assignedTickets           Ticket[]                 @relation("TicketAssignee")
+  trustedDevices            TrustedDevice[]
+  sessions                  UserSession[]
+
+  organization              Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@map("users")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model LoginOtpChallenge {
+  id             String    @id @default(uuid())
+  challengeId    String    @unique @map("challenge_id")
+  userId         String    @map("user_id")
+  otpHash        String    @map("otp_hash")
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(5) @map("max_attempts")
+  expiresAt      DateTime  @map("expires_at")
+  consumedAt     DateTime? @map("consumed_at")
+  lastSentAt     DateTime  @default(now()) @map("last_sent_at")
+  rememberDevice Boolean   @default(false) @map("remember_device")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("login_otp_challenges")
+}
+
+model TrustedDevice {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  label      String?
+  ipAddress  String?   @map("ip_address")
+  userAgent  String?   @map("user_agent")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("trusted_devices")
+}
+
+model UserSession {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  refreshTokenId String    @unique @map("refresh_token_id")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastUsedAt     DateTime  @default(now()) @map("last_used_at")
+  revokedAt      DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model LoginActivity {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  email     String
+  success   Boolean
+  reason    String?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([email])
+  @@map("login_activities")
+}
+
+model Customer {
+  id           String       @id @default(uuid())
+  orgId        String       @map("org_id")
+  email        String?
+  name         String?
+  phone        String?
+  avatarUrl    String?      @map("avatar_url")
+  externalId   String?      @map("external_id")
+  tags         String[]     @default([])
+  isVip        Boolean      @default(false) @map("is_vip")
+  isBlocked    Boolean      @default(false) @map("is_blocked")
+  metadata     Json         @default("{}")
+  deletedAt    DateTime?    @map("deleted_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tickets      Ticket[]
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@map("customers")
+}
+
+model Team {
+  id           String       @id @default(uuid())
+  orgId        String       @map("org_id")
+  name         String
+  managerId    String?      @map("manager_id")
+  createdAt    DateTime     @default(now())
+
+  members      TeamMember[]
+  manager      User?        @relation("TeamManager", fields: [managerId], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tickets      Ticket[]
+
+  @@index([orgId])
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId   String   @map("team_id")
+  userId   String   @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}
+
+model Ticket {
+  id                       String                @id @default(uuid())
+  orgId                    String                @map("org_id")
+  number                   Int
+  subject                  String
+  status                   TicketStatus          @default(open)
+  priority                 TicketPriority        @default(normal)
+  channel                  TicketChannel         @default(web_widget)
+  customerId               String                @map("customer_id")
+  assigneeId               String?               @map("assignee_id")
+  teamId                   String?               @map("team_id")
+  tags                     String[]              @default([])
+  aiSummary                String?               @map("ai_summary")
+  aiSentiment              String?               @map("ai_sentiment")
+  slaBreachAt              DateTime?             @map("sla_breach_at")
+  firstResponseDueAt       DateTime?             @map("first_response_due_at")
+  firstRespondedAt         DateTime?             @map("first_responded_at")
+  slaBreached              Boolean               @default(false) @map("sla_breached")
+  escalatedAt              DateTime?             @map("escalated_at")
+  slaApproachingNotifiedAt DateTime?             @map("sla_approaching_notified_at")
+  gmailThreadId            String?               @map("gmail_thread_id")
+  emailReplyToken         String?               @unique @map("email_reply_token")
+  lastCustomerActivityAt  DateTime?             @map("last_customer_activity_at")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  resolvedAt               DateTime?             @map("resolved_at")
+
+  attachments          Attachment[]
+  inboundEmailMessages InboundEmailMessage[]
+  messages             TicketMessage[]
+  trackingTokens       TicketTrackingToken[]
+  views                TicketView[]
+
+  assignee      User?      @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  customer      Customer   @relation(fields: [customerId], references: [id])
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  team          Team?      @relation(fields: [teamId], references: [id])
+
+  @@unique([orgId, number])
+  @@index([orgId, status])
+  @@index([orgId, assigneeId])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id             String            @id @default(uuid())
+  ticketId       String            @map("ticket_id")
+  authorType     MessageAuthorType @map("author_type")
+  authorId       String?           @map("author_id")
+  body           String
+  bodyFormat     String            @default("text") @map("body_format")
+  isInternalNote Boolean           @default(false) @map("is_internal_note")
+  aiGenerated    Boolean           @default(false) @map("ai_generated")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  author User?  @relation(fields: [authorId], references: [id])
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+model KnowledgeArticle {
+  id            String        @id @default(uuid())
+  orgId         String        @map("org_id")
+  title         String
+  content       String
+  status        ArticleStatus @default(draft)
+  tags          String[]      @default([])
+  vectorIndexed Boolean       @default(false) @map("vector_indexed")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("knowledge_articles")
+}
+
+model Invitation {
+  id           String           @id @default(uuid())
+  orgId        String           @map("org_id")
+  email        String
+  role         UserRole
+  tokenHash    String           @unique @map("token_hash")
+  status       InvitationStatus @default(pending)
+  invitedById  String           @map("invited_by_id")
+  expiresAt    DateTime         @map("expires_at")
+  acceptedAt   DateTime?        @map("accepted_at")
+  revokedAt    DateTime?        @map("revoked_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  invitedBy    User         @relation("InvitationInviter", fields: [invitedById], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([email])
+  @@index([orgId, email, status])
+  @@map("invitations")
+}
+
+model AuditLog {
+  id           String       @id @default(uuid())
+  orgId        String       @map("org_id")
+  actorId      String?      @map("actor_id")
+  action       String
+  targetType   String?      @map("target_type")
+  targetId     String?      @map("target_id")
+  metadata     Json?
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model EmailConnection {
+  id                    String                @id @default(uuid())
+  orgId                 String                @map("org_id")
+  provider              EmailProvider         @default(gmail)
+  providerAccountId     String                @map("provider_account_id")
+  email                 String
+  accessTokenEncrypted  String                @map("access_token_encrypted")
+  refreshTokenEncrypted String                @map("refresh_token_encrypted")
+  tokenExpiresAt        DateTime              @map("token_expires_at")
+  scopes                String[]              @default([])
+  historyId             String?               @map("history_id")
+  syncStatus            EmailSyncStatus       @default(idle) @map("sync_status")
+  lastSyncedAt          DateTime?             @map("last_synced_at")
+  lastError             String?               @map("last_error")
+  isActive              Boolean               @default(true) @map("is_active")
+  settings              Json                  @default("{}")
+  connectedById         String                @map("connected_by_id")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  connectedBy  User         @relation("EmailConnectionConnectedBy", fields: [connectedById], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  inboundMessages InboundEmailMessage[]
+
+  @@unique([provider, providerAccountId, orgId])
+  @@index([orgId])
+  @@map("email_connections")
+}
+
+model InboundEmailMessage {
+  id                String                @id @default(uuid())
+  orgId             String                @map("org_id")
+  connectionId      String                @map("connection_id")
+  gmailMessageId    String                @map("gmail_message_id")
+  gmailThreadId     String                @map("gmail_thread_id")
+  internetMessageId String?               @map("internet_message_id")
+  inReplyTo         String?               @map("in_reply_to")
+  references        String?               @map("references")
+  senderEmail       String                @map("sender_email")
+  senderName        String?               @map("sender_name")
+  recipientEmail    String?               @map("recipient_email")
+  subject           String?
+  textBody          String?               @map("text_body")
+  sanitizedHtmlBody String?               @map("sanitized_html_body")
+  attachments       Json                  @default("[]")
+  receivedAt        DateTime              @map("received_at")
+  processingStatus  EmailProcessingStatus @default(pending) @map("processing_status")
+  processingError   String?               @map("processing_error")
+  ticketId          String?               @map("ticket_id")
+  createdAt         DateTime              @default(now())
+
+  connection   EmailConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  organization Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ticket       Ticket?        @relation(fields: [ticketId], references: [id])
+
+  @@unique([connectionId, gmailMessageId])
+  @@index([orgId])
+  @@index([gmailThreadId])
+  @@map("inbound_email_messages")
+}
+
+model TicketTrackingToken {
+  id           String    @id @default(uuid())
+  ticketId     String    @map("ticket_id")
+  tokenHash    String    @unique @map("token_hash")
+  expiresAt    DateTime? @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  lastOpenedAt DateTime? @map("last_opened_at")
+  openCount    Int       @default(0) @map("open_count")
+  createdAt    DateTime  @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("ticket_tracking_tokens")
+}
+
+model EmailOutboxEvent {
+  id          String          @id @default(uuid())
+  orgId       String          @map("org_id")
+  eventType   String          @map("event_type")
+  ticketId    String?         @map("ticket_id")
+  payload     Json
+  status      OutboxEventStatus @default(pending)
+  attempts    Int             @default(0)
+  lastError   String?         @map("last_error")
+  processedAt DateTime?       @map("processed_at")
+  createdAt   DateTime        @default(now())
+
+  @@index([status])
+  @@index([orgId])
+  @@map("email_outbox_events")
+}
+
+model TicketView {
+  id           String   @id @default(uuid())
+  ticketId     String   @map("ticket_id")
+  userId       String   @map("user_id")
+  lastViewedAt DateTime @default(now()) @map("last_viewed_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@map("ticket_views")
+}
+
+model AutomationRule {
+  id            String             @id @default(uuid())
+  orgId         String             @map("org_id")
+  name          String
+  trigger       AutomationTrigger
+  isActive      Boolean            @default(true) @map("is_active")
+  position      Int                @default(0)
+  conditions    Json               @default("[]")
+  actions       Json               @default("[]")
+  triggerConfig Json               @default("{}") @map("trigger_config")
+  createdById   String             @map("created_by_id")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  organization Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  runLogs      AutomationRunLog[]
+
+  @@index([orgId, trigger])
+  @@map("automation_rules")
+}
+
+model AutomationRunLog {
+  id             String         @id @default(uuid())
+  orgId          String         @map("org_id")
+  ruleId         String         @map("rule_id")
+  ticketId       String?        @map("ticket_id")
+  actionsApplied Json           @map("actions_applied")
+  createdAt      DateTime       @default(now())
+
+  rule AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([ruleId])
+  @@map("automation_run_logs")
+}
+
+model Attachment {
+  id                    String       @id @default(uuid())
+  orgId                 String       @map("org_id")
+  ticketId              String?      @map("ticket_id")
+  inboundEmailMessageId String?      @map("inbound_email_message_id")
+  filename              String
+  mimeType              String       @map("mime_type")
+  sizeBytes             Int          @map("size_bytes")
+  storageKey            String       @map("storage_key")
+  createdAt             DateTime     @default(now())
+
+  organization          Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ticket                Ticket?                @relation(fields: [ticketId], references: [id])
+
+  @@index([orgId])
+  @@index([ticketId])
+  @@map("attachments")
+}
+
+model CannedResponse {
+  id           String       @id @default(uuid())
+  orgId        String       @map("org_id")
+  name         String
+  body         String
+  createdById  String       @map("created_by_id")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("canned_responses")
+}
+
+enum PlanTier {
+  free
+  starter
+  growth
+  enterprise
+}
+
+enum UserRole {
+  owner
+  admin
+  agent
+  viewer
+}
+
+enum TicketStatus {
+  open
+  pending
+  on_hold
+  solved
+  closed
+}
+
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum TicketChannel {
+  email
+  chat
+  web_widget
+  api
+  social
+}
+
+enum MessageAuthorType {
+  customer
+  agent
+  ai
+  system
+}
+
+enum ArticleStatus {
+  draft
+  published
+  archived
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  revoked
+  expired
+}
+
+enum EmailProvider {
+  gmail
+}
+
+enum EmailSyncStatus {
+  idle
+  syncing
+  error
+  disconnected
+}
+
+enum EmailProcessingStatus {
+  pending
+  processing
+  processed
+  skipped
+  failed
+}
+
+enum OutboxEventStatus {
+  pending
+  processing
+  sent
+  failed
+}
+
+enum AutomationTrigger {
+  ticket_created
+  customer_replied
+  status_changed
+  sla_approaching
+  sla_breached
+  ticket_inactive
+  ticket_reopened
+}

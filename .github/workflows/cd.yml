@@ -1,0 +1,110 @@
+name: CD
+
+# Deploys to ECS Fargate — the compute platform actually provisioned by
+# infra/terraform (see ecs.tf). This pipeline intentionally does NOT use
+# Kubernetes: Terraform here favors managed AWS services (Fargate, RDS,
+# ElastiCache, MSK, OpenSearch) over self-hosting on EKS to minimize
+# operational overhead. Teams that already run EKS can use infra/k8s/
+# instead (see its README) — that path isn't wired to this workflow.
+#
+# Requires these repo-level configuration values (Settings > Secrets and
+# variables > Actions):
+#   Variables: AWS_REGION, ECS_CLUSTER_NAME, ECR_REPOSITORY_PREFIX
+#              (ECR_REPOSITORY_PREFIX must equal "<project_name>-<environment>"
+#              from your terraform.tfvars, e.g. "support-saas-production")
+#   Secrets:   AWS_ROLE_ARN — the `github_actions_role_arn` Terraform output
+# No static AWS access keys are used anywhere in this pipeline.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write # required for OIDC -> AWS role assumption
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build & push images to ECR
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.value }}
+    strategy:
+      matrix:
+        service: [api, web, ai-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tag
+        run: echo "value=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (OIDC, no static keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}:${{ steps.tag.outputs.value }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      # One service at a time (not a matrix) so a bad deploy of one service
+      # doesn't race the others — and so this log reads top-to-bottom.
+      max-parallel: 1
+      matrix:
+        service: [api, ai-service, web]
+    steps:
+      - name: Configure AWS credentials (OIDC, no static keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR (for registry URI only, no push here)
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Fetch current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ vars.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }} \
+            --query taskDefinition > task-definition.json
+
+      - name: Update image in task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ matrix.service }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Deploy new task definition and wait for stability
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ vars.ECS_CLUSTER_NAME }}
+          service: ${{ vars.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}
+          wait-for-service-stability: true

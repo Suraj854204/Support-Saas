@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: support-saas
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - api-deployment.yaml
+  - web-deployment.yaml
+  - ai-service-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# migration-job.yaml is intentionally NOT listed here — Job specs are
+# immutable, so it's applied fresh on every deploy by the CD workflow
+# instead of being reconciled idempotently like the resources above.
+
+images:
+  - name: api
+    newName: api
+    newTag: latest
+  - name: web
+    newName: web
+    newTag: latest
+  - name: ai-service
+    newName: ai-service
+    newTag: latest
+
+commonLabels:
+  app.kubernetes.io/part-of: support-saas
+  app.kubernetes.io/managed-by: kustomize

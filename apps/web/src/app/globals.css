@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 9% 98%;
+    --surface: 0 0% 100%;
+    --border: 60 5% 90%;
+    --foreground: 240 10% 8%;
+    --muted: 60 5% 95%;
+    --muted-foreground: 231 5% 45%;
+
+    --primary: 243 76% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --ai-accent: 175 84% 32%;
+    --ai-accent-foreground: 0 0% 100%;
+
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+
+    --danger: 0 74% 51%;
+    --danger-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 228 16% 6%;
+    --surface: 225 12% 10%;
+    --border: 225 10% 16%;
+    --foreground: 220 20% 94%;
+    --muted: 225 10% 14%;
+    --muted-foreground: 224 8% 63%;
+
+    --primary: 243 100% 71%;
+    --primary-foreground: 240 10% 8%;
+
+    --ai-accent: 172 66% 50%;
+    --ai-accent-foreground: 240 10% 8%;
+
+    --success: 142 71% 60%;
+    --success-foreground: 240 10% 8%;
+
+    --warning: 43 96% 62%;
+    --warning-foreground: 240 10% 8%;
+
+    --danger: 0 91% 74%;
+    --danger-foreground: 240 10% 8%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Visible keyboard focus everywhere — never suppressed */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Thin, unobtrusive scrollbars matching the density of the product */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

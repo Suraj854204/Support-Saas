@@ -19,6 +19,18 @@ support-saas/
     ├── terraform/      AWS infra (ECS Fargate + managed services) — the supported deploy path
     └── k8s/            Kustomize manifests — alternative path for teams already on Kubernetes
 ```
+<img src="/public/fonts/pic1.png" alt="Website screenshot" />
+<img src="/public/fonts/pic2.png" alt="Website screenshot" />
+<img src="/public/fonts/pic3.png" alt="Website screenshot" />
+<img src="/public/fonts/pic4.png" alt="Website screenshot" />
+<img src="/public/fonts/pic5.png" alt="Website screenshot" />
+<img src="/public/fonts/pic6.png" alt="Website screenshot" />
+<img src="/public/fonts/pic7.png" alt="Website screenshot" />
+<img src="/public/fonts/pic8.png" alt="Website screenshot" />
+<img src="/public/fonts/pic9.png" alt="Website screenshot" />
+<img src="/public/fonts/pic10.png" alt="Website screenshot" />
+<img src="/public/fonts/pic11.png" alt="Website screenshot" />
+<img src="/public/fonts/pic12.png" alt="Website screenshot" />
 
 ## Data layer responsibilities
 

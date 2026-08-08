@@ -20,6 +20,17 @@ support-saas/
     └── k8s/            Kustomize manifests — alternative path for teams already on Kubernetes
 ```
 <img src="./apps/web/public/fonts/pic1.png"/>
+<img src="./apps/web/public/fonts/pic2.png"/>
+<img src="./apps/web/public/fonts/pic3.png"/>
+<img src="./apps/web/public/fonts/pic4.png"/>
+<img src="./apps/web/public/fonts/pic5.png"/>
+<img src="./apps/web/public/fonts/pic6.png"/>
+<img src="./apps/web/public/fonts/pic7.png"/>
+<img src="./apps/web/public/fonts/pic8.png"/>
+<img src="./apps/web/public/fonts/pic9.png"/>
+<img src="./apps/web/public/fonts/pic10.png"/>
+<img src="./apps/web/public/fonts/pic11.png"/>
+<img src="./apps/web/public/fonts/pic12.png"/>
 
 
 ## Data layer responsibilities

@@ -19,7 +19,7 @@ support-saas/
     ├── terraform/      AWS infra (ECS Fargate + managed services) — the supported deploy path
     └── k8s/            Kustomize manifests — alternative path for teams already on Kubernetes
 ```
-<img src="/public/fonts/pic1.png" alt="Website screenshot" />
+<img src="/apps/web/public/fonts/pic1.png"/>
 <img src="/public/fonts/pic2.png" alt="Website screenshot" />
 <img src="/public/fonts/pic3.png" alt="Website screenshot" />
 <img src="/public/fonts/pic4.png" alt="Website screenshot" />

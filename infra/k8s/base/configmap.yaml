@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: support-saas-config
+  namespace: support-saas
+data:
+  NODE_ENV: "production"
+  API_PORT: "4000"
+  AI_SERVICE_PORT: "8000"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  QDRANT_URL: "http://qdrant:6333"
+  QDRANT_COLLECTION: "knowledge_articles"
+  KAFKA_BROKERS: "kafka:9092"
+  KAFKA_ENABLED: "true"
+  JWT_ACCESS_TTL: "15m"
+  JWT_REFRESH_TTL: "30d"
+  WIDGET_JWT_TTL: "90d"
+  GEMINI_CHAT_MODEL: "gemini-2.5-flash"
+  GEMINI_EMBEDDING_MODEL: "models/text-embedding-004"
+  QDRANT_VECTOR_SIZE: "768"
+  RETRIEVAL_TOP_K: "4"
+  MIN_CONFIDENCE_SIMILARITY: "0.55"
+  # Overridden per-environment in overlays/*/kustomization.yaml
+  NEXT_PUBLIC_APP_URL: "https://app.example.com"
+  NEXT_PUBLIC_API_URL: "https://api.example.com"
+  NEXT_PUBLIC_AI_URL: "https://ai.example.com"
+  CORS_ORIGINS: "https://app.example.com"

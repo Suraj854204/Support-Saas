@@ -1,0 +1,67 @@
+server:
+  port: ${SEMANTIC_CACHE_PORT:8081}
+
+spring:
+  application:
+    name: semantic-cache
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      timeout: ${SEMANTIC_CACHE_REDIS_TIMEOUT_MS:250}ms
+  mvc:
+    async:
+      # Must stay above coalesce-timeout-ms, otherwise a coalesced waiter is cut off by the
+      # container before its owner has had the full window to answer.
+      request-timeout: ${SEMANTIC_CACHE_REQUEST_TIMEOUT_MS:50000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    com.supportsaas.semanticcache: ${SEMANTIC_CACHE_LOG_LEVEL:INFO}
+
+semanticcache:
+  enabled: ${SEMANTIC_CACHE_ENABLED:true}
+
+  l1-capacity: ${CACHE_L1_CAPACITY:10000}
+  ttl-seconds: ${CACHE_TTL_SECONDS:3600}
+  max-response-bytes: ${CACHE_MAX_RESPONSE_SIZE:32768}
+  embedding-dimension: ${CACHE_EMBEDDING_DIMENSION:3072}
+
+  similarity-threshold: ${SEMANTIC_SIMILARITY_THRESHOLD:0.92}
+  judge-threshold: ${SEMANTIC_JUDGE_THRESHOLD:0.88}
+  judge-enabled: ${SEMANTIC_JUDGE_ENABLED:false}
+
+  lsh-tables: ${LSH_TABLES:8}
+  lsh-hyperplanes: ${LSH_HYPERPLANES:12}
+  lsh-seed: ${LSH_SEED:42}
+  max-candidates: ${LSH_MAX_CANDIDATES:64}
+
+  bloom-expected-insertions: ${BLOOM_EXPECTED_INSERTIONS:100000}
+  bloom-false-positive-rate: ${BLOOM_FALSE_POSITIVE_RATE:0.01}
+  bloom-gates-l2: ${BLOOM_GATES_L2:true}
+
+  coalesce-timeout-ms: ${REQUEST_TIMEOUT_MS:45000}
+  scheduler-max-concurrent: ${SCHEDULER_MAX_CONCURRENT:16}
+  scheduler-max-queue-size: ${MAX_QUEUE_SIZE:256}
+  scheduler-acquire-timeout-ms: ${SCHEDULER_ACQUIRE_TIMEOUT_MS:5000}
+  scheduler-aging-after-ms: ${SCHEDULER_AGING_AFTER_MS:2000}
+
+  redis-enabled: ${SEMANTIC_CACHE_REDIS_ENABLED:true}
+  redis-key-prefix: ${SEMANTIC_CACHE_REDIS_PREFIX:semanticcache:v1}
+  redis-timeout-ms: ${SEMANTIC_CACHE_REDIS_TIMEOUT_MS:250}
+
+  # Left at zero on purpose. Fill these in with your provider's real numbers, or the savings
+  # figures on /stats stay at zero rather than reporting something invented.
+  cost-per-llm-call: ${LLM_COST_PER_CALL:0.0}
+  estimated-tokens-per-call: ${LLM_ESTIMATED_TOKENS_PER_CALL:0}
+
+  service-token: ${SEMANTIC_CACHE_SERVICE_TOKEN:}

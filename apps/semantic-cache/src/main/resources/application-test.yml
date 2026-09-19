@@ -1,0 +1,7 @@
+semanticcache:
+  embedding-dimension: 8
+  l1-capacity: 100
+  redis-enabled: false
+  bloom-gates-l2: false
+  coalesce-timeout-ms: 2000
+  scheduler-acquire-timeout-ms: 500

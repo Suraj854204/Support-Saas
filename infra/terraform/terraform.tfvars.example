@@ -1,0 +1,37 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values before
+# running `terraform apply`. Never commit the filled-in file.
+
+aws_region   = "us-east-1"
+environment  = "production"
+project_name = "support-saas"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+vpc_cidr           = "10.20.0.0/16"
+
+# --- GitHub OIDC (CD pipeline) ---
+github_repository = "your-org/support-saas" # "org/repo" — restrict deploy access to this repo
+
+# --- Database ---
+db_instance_class       = "db.t4g.medium"
+db_allocated_storage_gb = 50
+db_multi_az             = true
+
+# --- Cache / search / messaging ---
+redis_node_type            = "cache.t4g.small"
+opensearch_instance_type   = "t3.small.search"
+enable_msk                 = true
+kafka_broker_instance_type = "kafka.t3.small"
+kafka_broker_count         = 2
+
+# --- Compute ---
+api_desired_count        = 2
+web_desired_count        = 2
+ai_service_desired_count = 2
+container_image_tag      = "latest" # overridden per-deploy by CD
+
+# --- DNS/TLS (leave domain_name empty to use the ALB's own DNS name) ---
+domain_name = ""
+
+# --- Secrets (better: leave unset here and inject via TF_VAR_google_api_key
+# or a secrets backend — tfvars files are easy to accidentally commit) ---
+# google_api_key = "..."

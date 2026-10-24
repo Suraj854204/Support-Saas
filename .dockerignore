@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+.git
+.github
+.turbo
+**/coverage
+infra
+docs
+apps/semantic-cache
+apps/ai-service
+**/storage

@@ -49,3 +49,7 @@ infra/docker/data/
 # Misc
 *.pem
 .cache/
+
+.env.backup
+.env*
+!.env.example

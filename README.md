@@ -516,14 +516,45 @@ Kafka is not running locally. Chat keeps working; only the analytics volume char
 
 ## 📜 License
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE).
+Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
+
+<details>
+<summary><b>Read the full license text</b></summary>
+
+```text
+MIT License
+
+Copyright (c) 2026 Suraj Kumar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+</details>
+
+---
 
 <div align="center">
 
-<br/>
-
 **Built by [Suraj](https://github.com/Suraj854204)**
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" alt="footer" width="100%"/>
+<img src="https://img.shields.io/badge/Built%20with%20%E2%9D%A4%20by-Suraj-6366f1?style=for-the-badge" alt="Built with love by Suraj"/>
+
+⭐ If you found this project useful, consider giving it a star.
 
 </div>
